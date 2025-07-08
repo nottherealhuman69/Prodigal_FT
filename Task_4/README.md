@@ -1,244 +1,233 @@
-# Task 4: Kubernetes Pod Scaling with FastAPI
+# Task 4: Kubernetes Pod Scaling (K8s + HPA)
 
-This project demonstrates Kubernetes Horizontal Pod Autoscaling (HPA) using a FastAPI application that creates CPU load on demand.
+## Overview
+This task demonstrates Kubernetes Horizontal Pod Autoscaling (HPA) using a FastAPI application that can generate CPU load on demand. The system automatically scales from 1 to 10 pods based on CPU utilization.
 
-## Architecture Overview
+## Architecture
 
+### Components
+- **FastAPI Application**: Simple web service with CPU load generation endpoint
+- **Docker Container**: Containerized FastAPI app
+- **Kubernetes Deployment**: Manages pod replicas with resource limits
+- **Service**: Exposes the application via NodePort
+- **HPA**: Automatically scales pods based on CPU usage (target: 50%)
+- **Metrics Server**: Provides resource metrics for HPA decisions
+
+### Flow Diagram
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Load Test     │    │   Port Forward  │    │   FastAPI Pod   │
-│   Script        │───▶│   localhost:8080│───▶│   (1-10 pods)   │
-│  (1000 requests)│    │                 │    │                 │
+│   Load Test     │───▶│   FastAPI App   │───▶│   CPU Load      │
+│   (Python)      │    │   (Pod 1-10)    │    │   Generation    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │
                                 ▼
-                       ┌─────────────────┐
-                       │       HPA       │
-                       │   (Monitors     │
-                       │   CPU > 50%)    │
-                       └─────────────────┘
-```
-
-## Flow Diagram
-
-```
-1. Deploy FastAPI app → Kubernetes creates 1 pod
-2. Start port-forward → Access via localhost:8080
-3. Load test sends 1000 requests → CPU usage spikes above 50%
-4. HPA monitors CPU → Creates additional pods (2-10)
-5. Load distributed → Multiple pods handle requests
-6. Load stops → CPU decreases → HPA scales down after 5 minutes
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Metrics       │◀───│   Kubernetes    │───▶│      HPA        │
+│   Server        │    │   Cluster       │    │   (1-10 pods)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ## Prerequisites
-
-- Docker installed and running
-- Minikube installed and running
-- kubectl configured to use minikube context
+- Docker installed
+- Minikube installed
+- kubectl installed
 - Python 3.9+ with requests library
 
-## Project Structure
+## Quick Start
 
-```
-Task_4/
-├── app.py                    # FastAPI application
-├── requirements.txt          # Python dependencies
-├── setup_requirements.txt    # Setup script dependencies
-├── Dockerfile               # Container configuration
-├── deployment.yaml          # Kubernetes deployment
-├── service.yaml             # Kubernetes service
-├── hpa.yaml                # Horizontal Pod Autoscaler
-├── setup.py                # Python setup script
-├── load_test.py            # Load testing script (1000 requests)
-└── README.md               # This file
-```
-
-## Setup Instructions
-
-### 1. Start Minikube
+### Option 1: Automated Setup (Recommended)
 ```bash
-minikube start
-```
-
-### 2. Enable Metrics Server (Required for HPA)
-```bash
-minikube addons enable metrics-server
-```
-
-### 3. Install Setup Dependencies
-```bash
-pip install -r setup_requirements.txt
-```
-
-### 4. Run Python Setup Script
-```bash
+# Run the complete setup script
 python setup.py
 ```
 
-The setup script will automatically:
-- Check if Docker, Minikube, and kubectl are installed
-- Start Minikube if not running
-- Enable metrics server for autoscaling
-- Build and load the Docker image
-- Deploy all Kubernetes resources
-- Wait for everything to be ready
-- Show you next steps
-
-### 5. Alternative Manual Setup
-If the Python script doesn't work, run these commands manually:
-
+### Option 2: Manual Setup
 ```bash
-# Start minikube and enable metrics
+# 1. Start Minikube
 minikube start
+
+# 2. Enable metrics server
 minikube addons enable metrics-server
 
-# Build Docker image
+# 3. Build Docker image
 docker build -t fastapi-cpu-load:latest .
 
-# Load image into minikube
+# 4. Load image to Minikube
 minikube image load fastapi-cpu-load:latest
 
-# Apply Kubernetes configs
+# 5. Deploy Kubernetes resources
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 kubectl apply -f hpa.yaml
 
-# Wait for pods to be ready
+# 6. Wait for pods to be ready
 kubectl wait --for=condition=ready pod -l app=fastapi-app --timeout=300s
 ```
 
 ## Testing the Application
 
-### 1. Check if Everything is Running
+### 1. Check Status
 ```bash
+# View pods
 kubectl get pods
+
+# View service
 kubectl get svc
+
+# View HPA status
 kubectl get hpa
 ```
 
-### 2. Access the Service via Port Forward
+### 2. Access the Application
 ```bash
-# Run this in one terminal and keep it running
+# Start port forwarding (keep this running)
 kubectl port-forward svc/fastapi-service 8080:8000
 ```
 
-### 3. Test Basic Functionality (in another terminal)
+### 3. Test Endpoints
 ```bash
-curl http://localhost:8080/
+# Health check
 curl http://localhost:8080/health
-```
 
-### 4. Create CPU Load (Manual)
-```bash
-# This will create CPU load for 5 seconds
+# Basic endpoint
+curl http://localhost:8080/
+
+# Generate CPU load
 curl http://localhost:8080/load
+
+# Pod information
+curl http://localhost:8080/info
 ```
 
-### 5. Run Load Test for Autoscaling
+## Autoscaling Demo
+
+### 1. Monitor in Real-time
+Open multiple terminals:
+
+**Terminal 1**: Port forwarding
 ```bash
-# Make sure port-forward is running first!
-python load_test.py
+kubectl port-forward svc/fastapi-service 8080:8000
 ```
 
-## Monitoring Autoscaling
-
-### Watch Pods Scale Up/Down
+**Terminal 2**: Watch pods
 ```bash
 kubectl get pods -w
 ```
 
-### Monitor HPA Status
+**Terminal 3**: Watch HPA
 ```bash
 kubectl get hpa -w
 ```
 
-### Check Resource Usage
+### 2. Generate Load
+**Terminal 4**: Run load test
 ```bash
-kubectl top pods
+python load_test.py
 ```
 
-## How to Know It's Working
+### 3. Observe Scaling
+- Watch CPU usage increase in HPA output
+- See new pods being created
+- Monitor scaling behavior
+- Observe scale-down after load stops
 
-1. **Initial State**: You should see 1 pod running
-2. **Port Forward Active**: `curl http://localhost:8080/health` returns `{"status":"healthy"}`
-3. **During Load Test**: 
-   - Load test runs 1000 requests with 20 concurrent workers
-   - CPU usage increases to >50% (visible in `kubectl top pods`)
-   - HPA creates more pods (visible in `kubectl get pods -w`)
-   - You'll see 2-10 pods in "Running" state
-4. **After Load Test**: 
-   - CPU usage decreases below 50%
-   - HPA scales down to 1 pod after 5 minutes (stabilization period)
+## File Structure
+```
+task4/
+├── app.py              # FastAPI application
+├── Dockerfile          # Container definition
+├── requirements.txt    # Python dependencies
+├── deployment.yaml     # Kubernetes deployment
+├── service.yaml        # Kubernetes service
+├── hpa.yaml           # Horizontal Pod Autoscaler
+├── setup.py           # Automated setup script
+├── load_test.py       # Load testing script
+├── README.md          # This file
+└── SUMMARY.md         # Implementation summary
+```
 
-## Expected Behavior
+## API Endpoints
 
-- **Scale Up**: When CPU > 50%, HPA adds pods (max 10)
-- **Scale Down**: When CPU < 50%, HPA removes pods (min 1) after 5-minute stabilization
-- **Resource Limits**: Each pod limited to 500m CPU, 512Mi memory
-- **Health Checks**: Liveness and readiness probes ensure pod health
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Basic status message |
+| `/health` | GET | Health check |
+| `/load` | GET | Generate CPU load (5 seconds) |
+| `/info` | GET | Pod information |
 
-## Autoscaling Configuration
+## Configuration
 
-The HPA is configured with:
-- **Target CPU**: 50% utilization
+### HPA Settings
 - **Min Replicas**: 1
 - **Max Replicas**: 10
-- **Scale Up**: Can double pods every 60 seconds
-- **Scale Down**: Can reduce by 50% every 60 seconds after 5-minute stabilization
+- **Target CPU**: 50%
+- **Scale Up**: 100% increase every 60s
+- **Scale Down**: 50% decrease every 60s (after 5min stability)
 
-## Load Test Details
+### Resource Limits
+- **CPU Request**: 100m
+- **CPU Limit**: 500m
+- **Memory Request**: 128Mi
+- **Memory Limit**: 512Mi
 
-The `load_test.py` script:
-- Sends **1000 HTTP requests** to `/load` endpoint
-- Uses **20 concurrent workers** for maximum CPU impact
-- Each request triggers 5 seconds of intensive CPU computation
-- Tests connection first before starting load test
-- Provides real-time feedback on request success/failure
-
-## Troubleshooting
-
-### Pods Not Scaling?
-- Check if metrics-server is running: `kubectl get pods -n kube-system | grep metrics`
-- Verify HPA can get metrics: `kubectl describe hpa fastapi-hpa`
-- Check resource requests are set in deployment.yaml
-
-### Can't Access the Service?
-- Use port forwarding: `kubectl port-forward svc/fastapi-service 8080:8000`
-- Test with: `curl http://localhost:8080/health`
-- Alternative: `minikube service fastapi-service --url`
-
-### Load Test Failing?
-- Ensure port-forward is running: `kubectl port-forward svc/fastapi-service 8080:8000`
-- Test connection manually: `curl http://localhost:8080/health`
-- Install requests if needed: `pip install requests`
-
-### Image Pull Issues?
-- Build image: `docker build -t fastapi-cpu-load:latest .`
-- Load into minikube: `minikube image load fastapi-cpu-load:latest`
-- Check deployment has `imagePullPolicy: Never`
-
-## Cleanup
+## Monitoring Commands
 
 ```bash
+# Real-time pod status
+kubectl get pods -w
+
+# HPA metrics
+kubectl get hpa -w
+
+# Resource usage
+kubectl top pods
+
+# Detailed HPA info
+kubectl describe hpa fastapi-hpa
+
+# Pod logs
+kubectl logs -f deployment/fastapi-app
+```
+
+## Cleanup
+```bash
+# Remove all resources
 kubectl delete -f hpa.yaml
 kubectl delete -f service.yaml
 kubectl delete -f deployment.yaml
+
+# Stop Minikube (optional)
+minikube stop
 ```
 
-## Key Learning Points
+## Troubleshooting
 
-1. **HPA Requirements**: Resource requests must be set for HPA to work
-2. **Metrics Server**: Essential for HPA to get CPU/memory metrics
-3. **Stabilization**: Prevents rapid scaling up/down (thrashing)
-4. **Port Forwarding**: Reliable way to access services in local development
-5. **Resource Limits**: Protect cluster from resource exhaustion
-6. **Health Checks**: Ensure only healthy pods receive traffic
+### Common Issues
+1. **Metrics not available**: Wait 1-2 minutes for metrics-server
+2. **Image not found**: Ensure `minikube image load` completed
+3. **Port already in use**: Change port in port-forward command
+4. **HPA not scaling**: Check if load is generating sufficient CPU usage
 
-## Production Considerations
+### Debug Commands
+```bash
+# Check metrics server
+kubectl get pods -n kube-system | grep metrics
 
-This setup works identically in production Kubernetes clusters (EKS, GKE, AKS):
-- Replace Minikube with production cluster
-- Use LoadBalancer or Ingress instead of port-forward
-- Consider custom metrics (queue length, response time) for scaling
-- Add resource quotas and limits for multi-tenant environments
-- Implement proper monitoring and alerting for scaling events
+# Verify image loaded
+minikube image ls | grep fastapi
+
+# Check pod logs
+kubectl logs -l app=fastapi-app
+
+# HPA events
+kubectl describe hpa fastapi-hpa
+```
+
+## Demo Video Points
+1. Show initial single pod
+2. Start load test
+3. Watch CPU usage increase
+4. Observe new pods scaling up
+5. Stop load test
+6. Watch pods scale down
+7. Demonstrate monitoring commands
