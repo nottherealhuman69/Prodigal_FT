@@ -1,253 +1,185 @@
 # Task 7: Multi-Agent Newsletter Generator using LangChain
 
 ## Overview
-This project creates an automated multi-agent system that generates daily Telegram newsletters from top Web3 news sources. The system scrapes news from 5 major publications, deduplicates similar articles, and generates AI-powered summaries using Hugging Face's Mixtral model.
+An automated multi-agent system that scrapes Web3 news from top publications, deduplicates articles, generates newsletters, and delivers them via Telegram using LangChain agents.
 
 ## Architecture
 
+### System Flow Diagram
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   News Sources  │    │   News Scraper  │    │  Deduplicator   │
-│                 │────│                 │────│                 │
-│ • CoinDesk      │    │ • Web Scraping  │    │ • Similarity    │
-│ • CoinTelegraph │    │ • BeautifulSoup │    │ • TF-IDF        │
-│ • Decrypt       │    │ • Rate Limiting │    │ • Cosine Sim    │
-│ • Bankless     │    │                 │    │                 │
-│ • The Block     │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Newsletter Gen  │    │   AI Summary    │    │  Telegram Bot   │
-│                 │────│                 │────│                 │
-│ • Template      │    │ • Hugging Face  │    │ • Bot API       │
-│ • Formatting    │    │ • Mixtral Model │    │ • Message Send  │
-│ • Article List  │    │ • Prompt Eng    │    │ • Error Handle  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
+│ Scraping    │───▶│ Analysis     │───▶│ Content     │───▶│ Delivery     │
+│ Agent       │    │ Agent        │    │ Agent       │    │ Agent        │
+│             │    │              │    │             │    │              │
+│ • CoinDesk  │    │ • Dedup      │    │ • Summary   │    │ • Telegram   │
+│ • CoinTele  │    │ • Similarity │    │ • Format    │    │ • Schedule   │
+│ • Decrypt   │    │ • Top 10     │    │ • Template  │    │ • Error      │
+│ • Bankless │    │ • Filter     │    │ • AI Gen    │    │   Handling   │
+│ • TheBlock  │    │              │    │             │    │              │
+└─────────────┘    └──────────────┘    └─────────────┘    └──────────────┘
 ```
 
-## Project Structure
-
-```
-Task_7/
-├── config.py              # Configuration settings
-├── news_scraper.py        # Web scraping module
-├── deduplicator.py        # Article deduplication
-├── newsletter_generator.py # AI-powered newsletter creation
-├── telegram_bot.py        # Telegram bot integration
-├── main.py               # Main execution script
-├── scheduler.py          # Automated scheduling
-├── test_telegram.py      # Telegram bot testing
-├── requirements.txt      # Python dependencies
-├── .env.example         # Environment variables template
-├── README.md            # This file
-├── demo_script.md       # 5-minute demo script
-└── output/              # Generated newsletters
-```
+### Multi-Agent Architecture
+1. **ScrapingAgent**: Coordinates web scraping from 5 news sources
+2. **AnalysisAgent**: Handles deduplication using cosine similarity
+3. **ContentAgent**: Generates newsletter content with AI summaries
+4. **DeliveryAgent**: Manages Telegram delivery and error handling
 
 ## Features
-
-- **Multi-Source Scraping**: Collects news from 5 major Web3 publications
-- **Smart Deduplication**: Uses TF-IDF and cosine similarity to remove duplicate articles
-- **AI-Powered Summaries**: Leverages Mixtral-8x7B for intelligent content summarization
-- **Telegram Integration**: Automatically sends newsletters to Telegram groups
-- **Scheduled Execution**: Runs daily at specified times
-- **Error Handling**: Robust error handling and fallback mechanisms
+- ✅ Scrapes 5 major Web3 publications
+- ✅ LangChain multi-agent orchestration
+- ✅ Cosine similarity deduplication
+- ✅ Top 10 article selection
+- ✅ AI-generated summaries (Hugging Face)
+- ✅ Automated scheduling (daily + demo mode)
+- ✅ Telegram bot integration
+- ✅ Pydantic validation
+- ✅ Error handling and fallbacks
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+### 1. Environment Setup
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd task7-newsletter-generator
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env` and fill in your credentials:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-```
+### 2. Configuration
+Create a `.env` file in the root directory:
+```env
+# Telegram Configuration
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
-HUGGINGFACE_API_TOKEN=your_huggingface_token_here
+
+# Hugging Face API (for AI summaries)
+HUGGINGFACE_API_TOKEN=your_hf_token_here
 ```
 
-### 3. How to Get Required Tokens
+### 3. Getting API Keys
 
-#### Hugging Face API Token:
-1. Go to https://huggingface.co/
-2. Create account and log in
-3. Go to Settings → Access Tokens
-4. Create new token with "Read" permissions
-5. Copy token to `.env` file
-
-#### Telegram Bot Token:
+#### Telegram Bot Setup:
 1. Message @BotFather on Telegram
-2. Send `/newbot` command
-3. Follow instructions to create bot
-4. Copy bot token to `.env` file
+2. Create a new bot: `/newbot`
+3. Get your bot token
+4. Add bot to your group/channel
+5. Get chat ID using: `https://api.telegram.org/bot<TOKEN>/getUpdates`
 
-#### Telegram Chat ID:
-1. Add your bot to a group/channel
-2. Send a message to the group
-3. Visit: `https://api.telegram.org/bot<YourBOTToken>/getUpdates`
-4. Look for "chat":{"id": number
-5. Copy chat ID to `.env` file
+#### Hugging Face Token:
+1. Sign up at https://huggingface.co
+2. Go to Settings → Access Tokens
+3. Create a new token
 
-## How to Run
+## Running the Application
 
-### Single Run (Generate Newsletter Once)
+### Manual Execution
 ```bash
+# Run once manually
 python main.py
-```
 
-### Test Telegram Connection
-```bash
+# Test Telegram connection
 python test_telegram.py
 ```
 
-### Run Scheduler (Continuous)
+### Scheduled Execution
 ```bash
+# Run scheduler (daily at 9 AM + every 2 minutes for demo)
 python scheduler.py
 ```
 
-## How to Know It's Working
-
-### 1. Successful Execution Signs:
-- Console shows "🚀 Starting Daily Web3 Newsletter Generation..."
-- Articles are scraped from each source (you'll see "Scraping [Source]..." messages)
-- Deduplication process shows article count reduction
-- AI summary generation completes without errors
-- Newsletter files are created in `output/` folder
-- If Telegram is configured: "✅ Newsletter sent to Telegram successfully!"
-
-### 2. Output Files:
-Check the `output/` folder for:
-- `newsletter_YYYYMMDD_HHMMSS.txt` - Generated newsletter
-- `articles_YYYYMMDD_HHMMSS.json` - Raw article data
-
-### 3. Console Output Example:
-```
-🚀 Starting Daily Web3 Newsletter Generation...
-==================================================
-
-📰 Step 1: Scraping news from sources...
-Scraping CoinDesk...
-Scraping CoinTelegraph...
-Scraping Decrypt...
-Scraping Bankless...
-Scraping The Block...
-Total articles scraped: 25
-
-🔄 Step 2: Deduplicating articles...
-Deduplicated: 25 -> 18 articles
-✅ Selected 10 top articles
-
-📝 Step 3: Generating newsletter content...
-
-💾 Step 4: Saving newsletter...
-Newsletter saved to output/newsletter_20250706_143022.txt
-Articles data saved to output/articles_20250706_143022.json
-
-📱 Step 5: Sending to Telegram...
-✅ Newsletter sent to Telegram successfully!
-
-✅ Newsletter generation completed!
-```
-
-### 4. Troubleshooting:
-
-#### If scraping fails:
-- Check internet connection
-- Some sites may have anti-bot protection
-- Script will continue with available articles
-
-#### If AI summary fails:
-- Check Hugging Face API token
-- Fallback generic summary will be used
-- Newsletter generation continues
-
-#### If Telegram fails:
-- Run `python test_telegram.py` to diagnose
-- Check bot token and chat ID
-- Ensure bot is added to the group
-- Newsletter is still saved locally
-
-## Demo Flow
-
-### Quick Test (2 minutes):
+### LangChain Multi-Agent Mode
 ```bash
-# 1. Install and configure
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your tokens
-
-# 2. Test components
-python test_telegram.py
-
-# 3. Generate newsletter
-python main.py
+# Run with LangChain agents
+python langchain_agents.py
 ```
 
-### Scheduled Demo (5 minutes):
-```bash
-# Run scheduler (generates every 2 minutes for demo)
-python scheduler.py
+## File Structure
+```
+task7-newsletter-generator/
+├── README.md                 # This file
+├── SUMMARY.md                # Challenges and decisions
+├── requirements.txt          # Dependencies
+├── .env.example             # Environment template
+├── config.py                # Configuration management
+├── main.py                  # Main orchestrator
+├── news_scraper.py          # Web scraping logic
+├── deduplicator.py          # Similarity detection
+├── newsletter_generator.py  # Content generation
+├── langchain_agents.py      # Multi-agent system
+├── telegram_bot.py          # Telegram integration
+├── scheduler.py             # Automation scheduler
+├── test_telegram.py         # Telegram testing
+└── output/                  # Generated newsletters
+    ├── newsletter_YYYYMMDD_HHMMSS.txt
+    └── articles_YYYYMMDD_HHMMSS.json
 ```
 
-## File Descriptions
+## Data Sources
+1. **CoinDesk** - https://www.coindesk.com/news/
+2. **CoinTelegraph** - https://cointelegraph.com/news
+3. **Decrypt** - https://decrypt.co/news
+4. **Bankless** - https://www.bankless.com/
+5. **The Block** - https://www.theblock.co/latest
 
-- **config.py**: Central configuration with API keys, model settings, and news sources
-- **news_scraper.py**: Web scraping logic for each news source with error handling
-- **deduplicator.py**: TF-IDF based similarity detection and article ranking
-- **newsletter_generator.py**: AI-powered content generation using Hugging Face API
-- **telegram_bot.py**: Async Telegram bot with message chunking for long newsletters
-- **main.py**: Main orchestration script that ties all components together
-- **scheduler.py**: Automated daily execution with configurable timing
-- **test_telegram.py**: Standalone Telegram bot testing utility
-
-## Key Features Implemented
-
-✅ **Multi-Source Scraping**: CoinDesk, CoinTelegraph, Decrypt, Bankless, The Block  
-✅ **Deduplication**: Cosine similarity using TF-IDF vectors  
-✅ **Top Article Selection**: Priority-based ranking system  
-✅ **AI Summary Generation**: Hugging Face Mixtral-8x7B integration  
-✅ **Newsletter Composition**: Structured format with header, body, footer  
-✅ **Telegram Automation**: Daily newsletter delivery to groups  
-✅ **Scheduling**: Automated 2+ days simulation capability  
-✅ **Error Handling**: Graceful fallbacks for each component  
-✅ **Local Storage**: JSON and text file outputs for backup  
-
-## Technical Notes
-
-- **Rate Limiting**: 2-second delays between source scraping
-- **Message Limits**: Telegram messages split at 4000 characters
-- **Similarity Threshold**: 0.8 cosine similarity for duplicate detection
-- **Max Articles**: Limited to top 10 articles per newsletter
-- **Fallback Mechanisms**: Generic summaries if AI fails, local storage if Telegram fails
-
-## Sample Output Structure
-
+## Output Example
 ```
-🚀 Daily Web3 Newsletter - July 06, 2025
+🚀 Daily Web3 Newsletter - January 15, 2025
 
 📊 Today's Summary:
-[AI-generated summary of key trends and developments]
+Today's Web3 newsletter covers 8 key stories from 4 major publications...
 
 📰 Top Stories:
 
-1. Bitcoin Reaches New All-Time High
+1. Bitcoin Reaches New All-Time High Above $100K
 🔗 Source: CoinDesk
-📖 Bitcoin price surges past $100,000 mark amid institutional adoption...
-🌐 Link: https://coindesk.com/...
+📖 Bitcoin surpassed $100,000 for the first time...
+🌐 Link: https://www.coindesk.com/...
 
-[... more articles ...]
-
----
-🔔 Stay updated with the latest Web3 news!
-📱 Follow us for daily crypto insights.
+[Additional articles...]
 ```
+
+## Testing
+```bash
+# Test individual components
+python -c "from news_scraper import NewsScraper; print(len(NewsScraper().scrape_all_sources()))"
+python -c "from telegram_bot import send_newsletter_sync; send_newsletter_sync('Test message')"
+
+# Test full pipeline
+python main.py
+```
+
+## Troubleshooting
+
+### Common Issues:
+1. **Scraping failures**: Some sites may block requests - implemented retry logic
+2. **Telegram errors**: Check bot permissions and chat ID
+3. **API rate limits**: Hugging Face has rate limits - fallback to simple summaries
+4. **Network timeouts**: Implemented timeout handling and retries
+
+### Debug Mode:
+```bash
+# Enable verbose logging
+export DEBUG=1
+python main.py
+```
+
+## Performance
+- **Scraping**: ~30-60 seconds for all sources
+- **Deduplication**: <5 seconds for 50 articles
+- **Newsletter generation**: <10 seconds
+- **Total runtime**: ~2-3 minutes end-to-end
+
+## Next Steps for Production
+1. Add database persistence (PostgreSQL)
+2. Implement Redis caching
+3. Add monitoring and alerting
+4. Scale with containerization
+5. Add more sophisticated ML models
+6. Implement user feedback loop

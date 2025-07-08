@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Ego Death Capital raises $100M to finance Bitcoin-focused startups",
+    "link": "https://cointelegraph.com/news/ego-death-capital-raises-100m-to-finance-bitcoin-focused-startups",
+    "source": "CoinTelegraph",
+    "description": "Ego Death Capital raises $100M to finance Bitcoin-focused startups",
+    "scrape_method": "a[href*=\"/news/\"]",
+    "scraped_at": "2025-07-08T23:01:04.626376",
+    "scrape_id": "1751995864_194",
+    "freshness_score": 0.7645774237976792
+  },
+  {
+    "title": "Bitcoin price gained 72% and 84% the last two times BTC holders did this",
+    "link": "https://cointelegraph.com/news/bitcoin-price-rallied-72-84-the-last-two-times-btc-hodlers-did-this",
+    "source": "CoinTelegraph",
+    "description": "Bitcoin price gained 72% and 84% the last two times BTC holders did this",
+    "scrape_method": "div[class*=\"post\"]",
+    "scraped_at": "2025-07-08T23:01:04.595000",
+    "scrape_id": "1751995864_386",
+    "freshness_score": 0.8381579676141437
+  },
+  {
+    "title": "Artificial Intelligence",
+    "link": "https://decrypt.co/news/artificial-intelligence",
+    "source": "Decrypt",
+    "description": "Artificial Intelligence",
+    "scrape_method": "a[href*=\"/news/\"]",
+    "scraped_at": "2025-07-08T23:00:58.808807",
+    "scrape_id": "1751995858_882",
+    "freshness_score": 0.69514606685498
+  },
+  {
+    "title": "Share directly to X",
+    "link": "https://x.com/share?text=&url=https://www.bankless.com/read/the-two-sides-of-eth",
+    "source": "Bankless",
+    "description": "Share directly to X",
+    "scrape_method": "div[class*=\"article\"]",
+    "scraped_at": "2025-07-08T23:01:18.273040",
+    "scrape_id": "1751995878_300",
+    "freshness_score": 0.5027862092799329
+  }
+]

@@ -4,10 +4,6 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import List, Dict
-from news_scraper import NewsScraper
-from deduplicator import NewsDeduplicator
-from newsletter_generator import NewsletterGenerator
-from telegram_bot import send_newsletter_sync
 
 def load_previous_articles() -> set:
     """Load previously sent article titles to avoid duplicates"""
@@ -32,32 +28,6 @@ def save_current_articles(articles: List[Dict]):
     except Exception as e:
         print(f"Warning: Could not save article history: {e}")
 
-def filter_new_articles(articles: List[Dict], previous_titles: set) -> List[Dict]:
-    """Filter out articles we've seen before"""
-    new_articles = []
-    for article in articles:
-        if article['title'] not in previous_titles:
-            new_articles.append(article)
-    
-    print(f"📊 Filtered: {len(articles)} total → {len(new_articles)} new articles")
-    return new_articles
-
-def add_variety_to_scraping() -> Dict:
-    """Add some randomness and deeper scraping"""
-    import random
-    
-    # Add random search terms for more diverse content
-    search_terms = [
-        "bitcoin", "ethereum", "crypto", "blockchain", "defi", 
-        "nft", "web3", "trading", "altcoin", "regulation"
-    ]
-    
-    return {
-        'random_term': random.choice(search_terms),
-        'scrape_more': random.choice([True, False]),
-        'variety_factor': random.randint(1, 3)
-    }
-
 def save_newsletter(newsletter_content: str, articles: List[Dict]):
     """Save newsletter and articles data"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -76,20 +46,51 @@ def save_newsletter(newsletter_content: str, articles: List[Dict]):
     print(f"Newsletter saved to output/newsletter_{timestamp}.txt")
     print(f"Articles data saved to output/articles_{timestamp}.json")
 
-def main():
-    """Main function with improved variation"""
-    print("🚀 Starting Daily Web3 Newsletter Generation...")
+def main_with_langchain():
+    """Main function using LangChain multi-agent system"""
+    print("🚀 Starting LangChain Multi-Agent Newsletter Generation...")
     print(f"🕐 Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 50)
+    
+    try:
+        # Try to use LangChain agents first
+        from langchain_agents import run_langchain_newsletter
+        
+        print("\n🤖 Using LangChain Multi-Agent System...")
+        newsletter_content = run_langchain_newsletter()
+        
+        if newsletter_content:
+            print("\n💾 Saving LangChain generated newsletter...")
+            # Extract articles for saving (simplified for demo)
+            dummy_articles = [{"title": "LangChain Generated Newsletter", "source": "Multi-Agent System"}]
+            save_newsletter(newsletter_content, dummy_articles)
+            save_current_articles(dummy_articles)
+            
+            print("✅ LangChain newsletter generation completed!")
+            return
+            
+    except ImportError:
+        print("⚠️ LangChain not available, falling back to standard pipeline...")
+    except Exception as e:
+        print(f"⚠️ LangChain generation failed: {e}")
+        print("🔄 Falling back to standard pipeline...")
+    
+    # Fallback to original implementation
+    main_standard()
+
+def main_standard():
+    """Original main function implementation"""
+    from news_scraper import NewsScraper
+    from deduplicator import NewsDeduplicator
+    from newsletter_generator import NewsletterGenerator
+    from telegram_bot import send_newsletter_sync
+    
+    print("\n📰 Using Standard Pipeline...")
     
     # Load previous articles to avoid repeats
     print("\n🔍 Checking for previous articles...")
     previous_titles = load_previous_articles()
     print(f"📚 Found {len(previous_titles)} previously processed articles")
-    
-    # Add variety to scraping
-    variety_config = add_variety_to_scraping()
-    print(f"🎲 Using variety factor: {variety_config['variety_factor']}")
     
     # Step 1: Scrape news
     print("\n📰 Step 1: Scraping news from sources...")
@@ -100,13 +101,16 @@ def main():
         print("❌ No articles found. Exiting...")
         return
     
-    # Filter out previously seen articles
-    print("\n🔄 Step 1.5: Filtering for new content...")
-    new_articles = filter_new_articles(all_articles, previous_titles)
+    # Filter new articles
+    new_articles = []
+    for article in all_articles:
+        if article['title'] not in previous_titles:
+            new_articles.append(article)
+    
+    print(f"📊 Filtered: {len(all_articles)} total → {len(new_articles)} new articles")
     
     if len(new_articles) < 3:
         print("⚠️  Very few new articles found. Including some previous articles for content.")
-        # Include some recent articles if we don't have enough new ones
         new_articles = all_articles[:max(10, len(new_articles))]
     
     # Step 2: Deduplicate articles
@@ -121,24 +125,19 @@ def main():
         print("❌ No articles to process. Exiting...")
         return
     
-    # Step 3: Generate newsletter with time-aware content
+    # Step 3: Generate newsletter
     print("\n📝 Step 3: Generating newsletter content...")
     generator = NewsletterGenerator()
-    
-    # Add time context to the newsletter
-    current_time = datetime.now()
-    time_context = f"Generated at {current_time.strftime('%H:%M')} on {current_time.strftime('%B %d, %Y')}"
-    
     newsletter_content = generator.create_newsletter(top_articles)
     
-    # Add uniqueness indicator
+    # Add time context
+    current_time = datetime.now()
+    time_context = f"Generated at {current_time.strftime('%H:%M')} on {current_time.strftime('%B %d, %Y')}"
     newsletter_content += f"\n\n⏰ {time_context}\n🔄 Run #{hash(str(current_time)) % 1000:03d}"
     
     # Step 4: Save newsletter
     print("\n💾 Step 4: Saving newsletter...")
     save_newsletter(newsletter_content, top_articles)
-    
-    # Save current articles for next run
     save_current_articles(top_articles)
     
     # Step 5: Send to Telegram
@@ -165,6 +164,15 @@ def main():
     print("-" * 30)
     preview = newsletter_content[:500] + "..." if len(newsletter_content) > 500 else newsletter_content
     print(preview)
+
+def main():
+    """Main entry point - try LangChain first, fallback to standard"""
+    try:
+        main_with_langchain()
+    except Exception as e:
+        print(f"Error in main execution: {e}")
+        print("Falling back to standard implementation...")
+        main_standard()
 
 if __name__ == "__main__":
     main()
