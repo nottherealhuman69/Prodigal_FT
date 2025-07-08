@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/c9bdc287fd0942cfadd32717d674eed9/artifacts
+end_time: 1751936116375
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: c9bdc287fd0942cfadd32717d674eed9
+run_name: brawny-quail-265
+run_uuid: c9bdc287fd0942cfadd32717d674eed9
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751936111931
+status: 3
+tags: []
+user_id: PC
