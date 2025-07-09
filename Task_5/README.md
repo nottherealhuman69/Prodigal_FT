@@ -79,7 +79,7 @@ GRANT ALL PRIVILEGES ON DATABASE binance_prices TO postgres;
 
 ### Step 1: Clone and Navigate
 ```bash
-git clone <repository-url>
+git clone https://github.com/nottherealhuman69/Prodigal_FT.git
 cd Task_5
 ```
 

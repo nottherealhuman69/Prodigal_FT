@@ -36,12 +36,17 @@ An automated multi-agent system that scrapes Web3 news from top publications, de
 - ✅ Pydantic validation
 - ✅ Error handling and fallbacks
 
+### 🔗 Telegram Group for Demo
+You can view the newsletter messages sent by the bot here:  
+👉 [Join Telegram Group](https://t.me/prodigalbotsuryan)
+
+
 ## Setup Instructions
 
 ### 1. Environment Setup
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/nottherealhuman69/Prodigal_FT.git
 cd task7-newsletter-generator
 
 # Create virtual environment
@@ -183,3 +188,4 @@ python main.py
 4. Scale with containerization
 5. Add more sophisticated ML models
 6. Implement user feedback loop
+

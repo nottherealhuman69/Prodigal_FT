@@ -46,7 +46,7 @@ This is a complete Retrieval-Augmented Generation (RAG) system that allows users
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/nottherealhuman69/Prodigal_FT.git
 cd task1b-rag-system
 
 # Build and run with Docker Compose

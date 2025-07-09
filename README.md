@@ -168,8 +168,8 @@ Each directory contains:
 
 ---
 
-**Submission by**: [Your Name]  
+**Submission by**: Suryan Pinnoju 
 **Email**: hiring@prodigalai.com  
-**Subject**: AI Backend Task Submission - [Your Name]
+**Subject**: AI Backend Task Submission - [Suryan Pinnoju]
 
 This implementation demonstrates expertise in modern backend development, ML operations, distributed systems, and production-ready software engineering practices.
